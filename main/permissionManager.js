@@ -1,6 +1,7 @@
 var pendingPermissions = []
 var grantedPermissions = []
 var nextPermissionId = 1
+var allowedNotifs = new Set(['chat.google.com', 'app.slack.com', 'mail.google.com', 'drive.google.com'])
 
 /*
 All permission requests are given to the renderer on each change,
@@ -96,7 +97,11 @@ function pagePermissionRequestHandler (webContents, permission, callback, detail
     */
     if (isPermissionGrantedForContents(webContents, permission, details)) {
       callback(true)
-    } else if (permission === 'notifications' && hasPendingRequestForContents(webContents, permission, details)) {
+    } else if (permission === "notifications" && allowedNotifs.has(new URL(details.requestingUrl).hostname)) {
+      callback(true);
+      return
+    }
+    else if (permission === 'notifications' && hasPendingRequestForContents(webContents, permission, details)) {
       /*
       Sites sometimes make a new request for each notification, which can generate multiple requests if the first one wasn't approved.
       TODO this isn't entirely correct (some requests will be rejected when they should be pending) - correct solution is to show a single button to approve all requests in the UI.
